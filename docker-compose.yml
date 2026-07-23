@@ -1,0 +1,180 @@
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: devsec_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password123
+      POSTGRES_DB: devsecaianalyst
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - devsec_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: devsec_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - devsec_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: devsec_qdrant
+    restart: unless-stopped
+    ports:
+      - "6333:6333"
+    volumes:
+      - qdrant_data:/qdrant/storage
+    networks:
+      - devsec_network
+
+  langfuse:
+    image: langfuse/langfuse:2
+    container_name: devsec_langfuse
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "3090:3000"
+    environment:
+      - DATABASE_URL=postgresql://postgres:password123@db:5432/devsecaianalyst?schema=langfuse
+      - NEXTAUTH_URL=http://localhost:3090
+      - NEXTAUTH_SECRET=devsec-langfuse-secret-key-2024
+      - SALT=devsec-langfuse-salt-2024
+      - PORT=3000
+    networks:
+      - devsec_network
+    restart: unless-stopped
+
+  gateway:
+    build:
+      context: ./gateway
+      dockerfile: Dockerfile
+    container_name: devsec_gateway
+    restart: unless-stopped
+    ports:
+      - "5001:5000"
+    environment:
+      - DATABASE_URL=postgresql://postgres:password123@db:5432/devsecaianalyst?schema=public
+      - REDIS_URL=redis://redis:6379
+      - PORT=5000
+      - JWT_SECRET=devsec-jwt-secret-key-2024
+      - NODE_ENV=development
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - shared_reports:/app/reports
+    networks:
+      - devsec_network
+    command: sh -c "npx prisma db push --skip-generate --accept-data-loss && npm run dev"
+
+  scraper:
+    build:
+      context: ./scraper
+      dockerfile: Dockerfile
+    container_name: devsec_scraper
+    restart: unless-stopped
+    environment:
+      - REDIS_URL=redis://redis:6379
+      - NODE_ENV=development
+    depends_on:
+      redis:
+        condition: service_healthy
+    volumes:
+      - shared_scans:/tmp/scans
+    networks:
+      - devsec_network
+
+  engine:
+    build:
+      context: ./engine
+      dockerfile: Dockerfile
+    container_name: devsec_engine
+    restart: unless-stopped
+    environment:
+      - REDIS_URL=redis://redis:6379
+      - DATABASE_URL=postgresql://postgres:password123@db:5432/devsecaianalyst?schema=public
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - GEMINI_API_KEY_EMBEDDING=${GEMINI_API_KEY_EMBEDDING:-}
+      - GEMINI_MODEL=${GEMINI_MODEL:-gemini-2.0-flash}
+      - QDRANT_HOST=qdrant
+      - QDRANT_PORT=6333
+      - LANGFUSE_PUBLIC_KEY=${LANGFUSE_PUBLIC_KEY:-}
+      - LANGFUSE_SECRET_KEY=${LANGFUSE_SECRET_KEY:-}
+      - LANGFUSE_HOST=${LANGFUSE_HOST:-http://langfuse:3000}
+    depends_on:
+      redis:
+        condition: service_healthy
+      db:
+        condition: service_healthy
+      qdrant:
+        condition: service_started
+    networks:
+      - devsec_network
+
+  pdfgen:
+    build:
+      context: ./pdfgen
+      dockerfile: Dockerfile
+    container_name: devsec_pdfgen
+    restart: unless-stopped
+    environment:
+      - REDIS_URL=redis://redis:6379
+      - DATABASE_URL=postgresql://postgres:password123@db:5432/devsecaianalyst?schema=public
+      - NODE_ENV=development
+    depends_on:
+      redis:
+        condition: service_healthy
+      db:
+        condition: service_healthy
+    volumes:
+      - shared_reports:/app/reports
+    networks:
+      - devsec_network
+
+  webapp:
+    build:
+      context: ./webapp
+      dockerfile: Dockerfile
+    container_name: devsec_webapp
+    restart: unless-stopped
+    ports:
+      - "3001:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:5001/api
+    depends_on:
+      - gateway
+    networks:
+      - devsec_network
+
+volumes:
+  postgres_data:
+  redis_data:
+  qdrant_data:
+  shared_scans:
+  shared_reports:
+
+networks:
+  devsec_network:
+    driver: bridge

@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>DevSecAI Security Report</title>
+    <style>
+        body {
+            font-family: 'Courier New', Courier, monospace;
+            background-color: #0a0a0a;
+            color: #e5e5e5;
+            margin: 0;
+            padding: 40px;
+        }
+        h1, h2, h3 {
+            color: #ff6b00;
+        }
+        .header {
+            border-bottom: 2px solid #ff6b00;
+            padding-bottom: 20px;
+            margin-bottom: 40px;
+        }
+        .summary-card {
+            background-color: #1a1a1a;
+            border: 1px solid #333;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 40px;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .stat-box {
+            padding: 15px;
+            text-align: center;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .crit { background: rgba(239, 68, 68, 0.2); border: 1px solid #ef4444; color: #ef4444; }
+        .high { background: rgba(249, 115, 22, 0.2); border: 1px solid #f97316; color: #f97316; }
+        .med { background: rgba(245, 158, 11, 0.2); border: 1px solid #f59e0b; color: #f59e0b; }
+        .low { background: rgba(16, 185, 129, 0.2); border: 1px solid #10b981; color: #10b981; }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 40px;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #333;
+        }
+        th {
+            background-color: #1a1a1a;
+            color: #ff6b00;
+        }
+        .badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .bg-crit { background: #ef4444; color: white; }
+        .bg-high { background: #f97316; color: white; }
+        .bg-med { background: #f59e0b; color: white; }
+        .bg-low { background: #10b981; color: white; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>DEVSECAI ANALYST</h1>
+        <p>Security Analysis Report for: <strong><%= report.project.repositoryUrl %></strong></p>
+        <p>Date: <%= new Date(report.createdAt).toLocaleString() %></p>
+    </div>
+
+    <div class="summary-card">
+        <h2>Executive Summary</h2>
+        <p>Risk Score: <strong><%= report.riskScore %>/100</strong></p>
+        <div class="stats-grid">
+            <div class="stat-box crit">CRITICAL<br><%= report.criticalCount %></div>
+            <div class="stat-box high">HIGH<br><%= report.highCount %></div>
+            <div class="stat-box med">MEDIUM<br><%= report.mediumCount %></div>
+            <div class="stat-box low">LOW<br><%= report.lowCount %></div>
+        </div>
+    </div>
+
+    <% 
+      const sast = typeof report.findingsSast === 'string' ? JSON.parse(report.findingsSast) : (report.findingsSast || []); 
+      const secrets = typeof report.findingsSecrets === 'string' ? JSON.parse(report.findingsSecrets) : (report.findingsSecrets || []); 
+      const deps = typeof report.findingsDependencies === 'string' ? JSON.parse(report.findingsDependencies) : (report.findingsDependencies || []); 
+    %>
+
+    <h2>SAST Findings (<%= sast.length %>)</h2>
+    <% if (sast.length === 0) { %>
+        <p>No SAST vulnerabilities found.</p>
+    <% } else { %>
+        <table>
+            <tr>
+                <th>Severity</th>
+                <th>Title</th>
+                <th>File</th>
+                <th>Remediation</th>
+            </tr>
+            <% sast.forEach(f => { %>
+            <tr>
+                <td><span class="badge bg-<%= f.severity.toLowerCase().substring(0,4) %>"><%= f.severity %></span></td>
+                <td><%= f.title %></td>
+                <td><%= f.file %>:<%= f.lineStart %></td>
+                <td><%= f.remediation %></td>
+            </tr>
+            <% }) %>
+        </table>
+    <% } %>
+
+    <h2>Exposed Secrets (<%= secrets.length %>)</h2>
+    <% if (secrets.length === 0) { %>
+        <p>No exposed secrets found.</p>
+    <% } else { %>
+        <table>
+            <tr>
+                <th>Type</th>
+                <th>File</th>
+                <th>Value (Masked)</th>
+            </tr>
+            <% secrets.forEach(f => { %>
+            <tr>
+                <td><%= f.type %></td>
+                <td><%= f.file %>:<%= f.line %></td>
+                <td><%= f.value %></td>
+            </tr>
+            <% }) %>
+        </table>
+    <% } %>
+
+    <h2>Vulnerable Dependencies (<%= deps.length %>)</h2>
+    <% if (deps.length === 0) { %>
+        <p>No vulnerable dependencies found.</p>
+    <% } else { %>
+        <table>
+            <tr>
+                <th>Severity</th>
+                <th>Package</th>
+                <th>Version</th>
+                <th>CVE ID</th>
+            </tr>
+            <% deps.forEach(f => { %>
+            <tr>
+                <td><span class="badge bg-<%= f.severity.toLowerCase().substring(0,4) %>"><%= f.severity %></span></td>
+                <td><%= f.package %></td>
+                <td><%= f.version %></td>
+                <td><%= f.vulnerabilityId %></td>
+            </tr>
+            <% }) %>
+        </table>
+    <% } %>
+
+</body>
+</html>

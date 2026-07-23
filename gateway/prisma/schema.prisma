@@ -1,0 +1,59 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-3.0.x", "debian-openssl-1.1.x", "linux-musl-openssl-3.0.x"]
+}
+
+enum ReportStatus {
+  PENDING
+  CLONING
+  SCRAPING
+  ANALYZING
+  GENERATING_REPORT
+  COMPLETED
+  FAILED
+}
+
+model User {
+  id        String    @id @default(uuid())
+  email     String    @unique
+  password  String
+  name      String?
+  projects  Project[]
+  createdAt DateTime  @default(now())
+}
+
+model Project {
+  id            String           @id @default(uuid())
+  repositoryUrl String
+  branch        String           @default("main")
+  userId        String
+  user          User             @relation(fields: [userId], references: [id])
+  reports       AnalysisReport[]
+  createdAt     DateTime         @default(now())
+}
+
+model AnalysisReport {
+  id                   String       @id @default(uuid())
+  projectId            String
+  project              Project      @relation(fields: [projectId], references: [id])
+  status               ReportStatus @default(PENDING)
+  riskScore            Int          @default(0)
+  criticalCount        Int          @default(0)
+  highCount            Int          @default(0)
+  mediumCount          Int          @default(0)
+  lowCount             Int          @default(0)
+  findingsSast         Json         @default("[]")
+  findingsSecrets      Json         @default("[]")
+  findingsDependencies Json         @default("[]")
+  findingsNetwork      Json         @default("[]")
+  summary              Json?
+  pdfPath              String?
+  errorMessage         String?
+  createdAt            DateTime     @default(now())
+  updatedAt            DateTime     @updatedAt
+}
