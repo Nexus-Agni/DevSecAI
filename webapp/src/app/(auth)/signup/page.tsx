@@ -1,8 +1,14 @@
 "use client";
 import { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import api from '@/lib/api';
 import { useAuth } from '@/lib/auth';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Shield } from 'lucide-react';
 
 export default function Signup() {
   const [name, setName] = useState('');
@@ -11,6 +17,7 @@ export default function Signup() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
+  const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -19,6 +26,7 @@ export default function Signup() {
     try {
       const res = await api.post('/auth/signup', { name, email, password });
       login(res.data.token, res.data.user);
+      router.push('/dashboard');
     } catch (err: any) {
       setError(err.response?.data?.error || err.response?.data?.errors?.[0]?.msg || 'Failed to register');
     } finally {
@@ -27,52 +35,73 @@ export default function Signup() {
   };
 
   return (
-    <div className="cyber-panel p-8 w-full max-w-md mx-auto mt-20 shadow-neon">
-      <h2 className="text-2xl font-bold mb-6 text-primary border-b border-border pb-2">REQUEST ACCESS</h2>
-      {error && <div className="bg-destructive/20 text-destructive border border-destructive p-3 rounded mb-4 text-sm font-mono">{error}</div>}
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        <div>
-          <label className="block text-xs font-mono text-muted-foreground mb-1">OPERATIVE NAME</label>
-          <input
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="w-full bg-background border border-border rounded p-2 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary text-foreground font-mono"
-            required
-          />
-        </div>
-        <div>
-          <label className="block text-xs font-mono text-muted-foreground mb-1">USER IDENTIFIER (EMAIL)</label>
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full bg-background border border-border rounded p-2 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary text-foreground font-mono"
-            required
-          />
-        </div>
-        <div>
-          <label className="block text-xs font-mono text-muted-foreground mb-1">ACCESS CODE (PASSWORD)</label>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full bg-background border border-border rounded p-2 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary text-foreground font-mono"
-            required
-            minLength={6}
-          />
-        </div>
-        <button
-          type="submit"
-          disabled={loading}
-          className="mt-4 w-full border border-primary text-primary font-bold py-2 rounded hover:bg-primary/10 transition-colors disabled:opacity-50"
-        >
-          {loading ? 'PROCESSING...' : 'SUBMIT REQUEST'}
-        </button>
-      </form>
-      <div className="mt-6 text-center text-sm font-mono text-muted-foreground">
-        ALREADY REGISTERED? <Link href="/login" className="text-primary hover:underline">INITIATE SESSION</Link>
+    <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
+      <div className="mb-8 flex flex-col items-center gap-2">
+        <Link href="/" className="flex items-center gap-2 group">
+          <Shield className="text-primary group-hover:scale-110 transition-transform" size={32} />
+          <span className="font-bold text-2xl tracking-tight">DEVSEC<span className="text-primary">AI</span></span>
+        </Link>
       </div>
+
+      <Card className="w-full max-w-md">
+        <CardHeader className="text-center">
+          <CardTitle className="text-2xl">Create an account</CardTitle>
+          <CardDescription>Enter your details to get started</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {error && (
+              <div className="bg-destructive/15 text-destructive p-3 rounded-md text-sm">
+                {error}
+              </div>
+            )}
+            <div className="space-y-2">
+              <Label htmlFor="name">Full Name</Label>
+              <Input
+                id="name"
+                type="text"
+                placeholder="John Doe"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="name@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="password">Password</Label>
+              <Input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                minLength={6}
+              />
+            </div>
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? 'Creating account...' : 'Create account'}
+            </Button>
+          </form>
+        </CardContent>
+        <CardFooter className="justify-center border-none">
+          <p className="text-sm text-muted-foreground">
+            Already have an account?{' '}
+            <Link href="/login" className="text-primary hover:underline font-medium">
+              Sign in
+            </Link>
+          </p>
+        </CardFooter>
+      </Card>
     </div>
   );
 }

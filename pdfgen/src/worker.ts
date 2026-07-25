@@ -53,7 +53,7 @@ const worker = new Worker(
       const page = await browser.newPage();
       await page.setContent(html, { waitUntil: 'networkidle0' });
 
-      const reportsDir = path.join(__dirname, '../../reports');
+      const reportsDir = '/app/reports';
       if (!fs.existsSync(reportsDir)) {
         fs.mkdirSync(reportsDir, { recursive: true });
       }

@@ -35,17 +35,6 @@ services:
       timeout: 5s
       retries: 5
 
-  qdrant:
-    image: qdrant/qdrant:latest
-    container_name: devsec_qdrant
-    restart: unless-stopped
-    ports:
-      - "6333:6333"
-    volumes:
-      - qdrant_data:/qdrant/storage
-    networks:
-      - devsec_network
-
   langfuse:
     image: langfuse/langfuse:2
     container_name: devsec_langfuse
@@ -116,10 +105,7 @@ services:
       - REDIS_URL=redis://redis:6379
       - DATABASE_URL=postgresql://postgres:password123@db:5432/devsecaianalyst?schema=public
       - GEMINI_API_KEY=${GEMINI_API_KEY}
-      - GEMINI_API_KEY_EMBEDDING=${GEMINI_API_KEY_EMBEDDING:-}
-      - GEMINI_MODEL=${GEMINI_MODEL:-gemini-2.0-flash}
-      - QDRANT_HOST=qdrant
-      - QDRANT_PORT=6333
+      - GEMINI_MODEL=${GEMINI_MODEL:-gemini-3.6-flash}
       - LANGFUSE_PUBLIC_KEY=${LANGFUSE_PUBLIC_KEY:-}
       - LANGFUSE_SECRET_KEY=${LANGFUSE_SECRET_KEY:-}
       - LANGFUSE_HOST=${LANGFUSE_HOST:-http://langfuse:3000}
@@ -128,8 +114,6 @@ services:
         condition: service_healthy
       db:
         condition: service_healthy
-      qdrant:
-        condition: service_started
     networks:
       - devsec_network
 
@@ -171,7 +155,6 @@ services:
 volumes:
   postgres_data:
   redis_data:
-  qdrant_data:
   shared_scans:
   shared_reports:
 

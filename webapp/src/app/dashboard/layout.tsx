@@ -1,12 +1,14 @@
 "use client";
 import { useAuth } from '@/lib/auth';
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
-import Link from 'next/link';
+import { useEffect, useState } from 'react';
+import Sidebar from '@/components/Sidebar';
+import { Menu, X } from 'lucide-react';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const { user, loading, logout } = useAuth();
+  const { user, loading } = useAuth();
   const router = useRouter();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -19,24 +21,23 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      <header className="border-b border-border bg-card/50 backdrop-blur-md sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-          <Link href="/dashboard" className="text-xl font-bold text-primary tracking-widest flex items-center gap-2">
-            DEVSEC<span className="text-foreground">AI</span>
-            <span className="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded ml-2">v2.0</span>
-          </Link>
-          <div className="flex items-center gap-4 text-sm font-mono text-muted-foreground">
-            <span>OP: {user.name?.toUpperCase() || user.email.toUpperCase()}</span>
-            <button onClick={logout} className="hover:text-primary transition-colors border border-border px-3 py-1 rounded hover:border-primary/50">
-              TERMINATE
-            </button>
-          </div>
+    <div className="min-h-screen bg-background flex flex-col md:flex-row">
+      <div className="md:hidden flex items-center justify-between p-4 border-b border-border bg-card sticky top-0 z-20">
+        <div className="text-xl font-bold text-primary tracking-widest flex items-center gap-2">
+          DEVSEC<span className="text-foreground">AI</span>
         </div>
-      </header>
-      <main className="flex-1 max-w-7xl w-full mx-auto p-4 md:p-8">
-        {children}
-      </main>
+        <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="text-foreground p-1">
+          {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+        </button>
+      </div>
+
+      <Sidebar mobileOpen={mobileMenuOpen} setMobileOpen={setMobileMenuOpen} />
+      
+      <div className="flex-1 md:ml-64 flex flex-col min-h-screen">
+        <main className="flex-1 w-full max-w-7xl mx-auto p-4 md:p-8">
+          {children}
+        </main>
+      </div>
     </div>
   );
 }

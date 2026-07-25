@@ -9,23 +9,30 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        background: '#050505',
-        foreground: '#e5e5e5',
+        background: '#09090b', // zinc-950
+        foreground: '#fafafa', // zinc-50
         primary: {
-          DEFAULT: '#ff6b00',
-          foreground: '#000000',
+          DEFAULT: '#6366f1', // indigo-500
+          foreground: '#ffffff',
         },
         card: {
-          DEFAULT: '#0a0a0a',
-          foreground: '#e5e5e5',
+          DEFAULT: '#18181b', // zinc-900
+          foreground: '#fafafa',
         },
-        border: '#1a1a1a',
+        border: '#27272a', // zinc-800
         muted: {
-          DEFAULT: '#171717',
-          foreground: '#737373',
+          DEFAULT: '#27272a',
+          foreground: '#a1a1aa', // zinc-400
         },
-        destructive: '#ef4444',
-        accent: '#1a1a1a',
+        destructive: {
+          DEFAULT: '#ef4444',
+          foreground: '#fafafa',
+        },
+        accent: {
+          DEFAULT: '#6366f1',
+          foreground: '#fafafa',
+        },
+        ring: '#6366f1',
       },
     },
   },
