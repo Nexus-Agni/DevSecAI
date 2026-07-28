@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Fragment } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import api from '@/lib/api';
@@ -295,7 +295,7 @@ export default function ScanReport() {
                 </thead>
                 <tbody>
                   {sast.map((finding: any, i: number) => (
-                    <React.Fragment key={i}>
+                    <Fragment key={i}>
                       <tr 
                         onClick={() => setExpandedSast(expandedSast === i ? null : i)}
                         className={`border-b border-border/50 hover:bg-muted/20 cursor-pointer transition-colors ${expandedSast === i ? 'bg-muted/10' : ''}`}
@@ -340,7 +340,7 @@ export default function ScanReport() {
                           </td>
                         </tr>
                       )}
-                    </React.Fragment>
+                    </Fragment>
                   ))}
                 </tbody>
               </table>
